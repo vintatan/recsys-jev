@@ -1,0 +1,6 @@
+{
+  "name": "recsys-jev Engine",
+  "description": "AI-Native Decision-Oriented Recommender System with Jev System 1 Reranking and Gemini System 2 Personalization",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

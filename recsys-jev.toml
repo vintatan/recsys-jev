@@ -1,0 +1,83 @@
+# ==============================================================================
+# recsys-jev Configuration Specification
+# AI-Native Evolution of Gorse Recommender Engine (https://gorse.io)
+# Implementing Decision-Oriented Recommendation Reranking (Lyu & Xia, Meta AI & SMU, 2026)
+# ==============================================================================
+
+[master]
+port = 8086
+host = "0.0.0.0"
+http_port = 8088
+jobs = 8
+heartbeat_timeout = "60s"
+dashboard_user = "admin"
+dashboard_password = "password"
+
+[server]
+default_n = 10
+api_key = ""
+cache_expire = "10s"
+clock_error = "5s"
+auto_insert_user = true
+auto_insert_item = true
+
+[database]
+# Hot Cache: Redis for immediate recommendation delivery
+cache_store = "redis://127.0.0.1:6379/0"
+# Cold Storage: PostgreSQL / MySQL for persistent user history and items
+data_store = "postgres://gorse:gorse_pass@127.0.0.1:5432/gorse?sslmode=disable"
+
+[recommend]
+# Stage 1 Candidate Generation Sources
+enable_collaborative_filtering = true
+enable_vector_search = true
+enable_latest_items = true
+enable_popular_items = true
+candidate_pool_size = 200
+
+[recommend.collaborative]
+model = "bpr"
+factors = 64
+iterations = 100
+lr = 0.05
+reg = 0.01
+
+[recommend.vector]
+engine = "faiss"
+index_type = "IVF1024,PQ32"
+embedding_dimension = 128
+metric = "cosine"
+
+# ==============================================================================
+# Jev Decision-Oriented Reranking Engine (System 1)
+# ==============================================================================
+[reranker.jev]
+enabled = true
+model_version = "jev-sys1-v2.6"
+decision_state_formulation = "sequential_intent_latent"
+choice_normalization = "calibrated_isotropic_softmax"
+endpoint = "http://127.0.0.1:8088/v1/decisions"
+max_candidate_k = 200
+p99_latency_sla_ms = 900
+confidence_gating_threshold = 0.85
+
+# Baselines for Comparative Telemetry
+[reranker.baselines]
+enable_pointwise_llm_benchmark = true
+pointwise_model = "qwen-7b-instruct"
+enable_listwise_llm_benchmark = true
+listwise_max_tokens = 4096
+sasrec_blocks = 2
+sasrec_heads = 4
+
+# ==============================================================================
+# Selective Explainability Personalization (System 2)
+# ==============================================================================
+[personalization.gemini]
+enabled = true
+model = "gemini-3.8-flash"
+target_rank_cutoff = 3          # Strictly synthesizes for Top-3 items
+confidence_threshold = 0.85     # Only explain when Jev confidence P > 0.85
+max_tokens_per_item = 40
+temperature = 0.3
+instruction = "Synthesize a 1-sentence personalized hook linking the user's technical history with the recommended item."

@@ -1,0 +1,43 @@
+# ==============================================================================
+# recsys-jev Docker Compose Orchestration
+# Reproducible Local Cluster with Redis Hot Cache & System 1 Engine
+# ==============================================================================
+
+services:
+  engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: recsys-jev:latest
+    container_name: recsys-jev-engine
+    ports:
+      - "8088:8088"
+    environment:
+      - PORT=8088
+      - PYTHONUNBUFFERED=1
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - GORSE_COMPATIBILITY_MODE=true
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/api/cluster/status"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  redis:
+    image: redis:7-alpine
+    container_name: recsys-jev-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
